@@ -1,2 +1,2 @@
 # evm-token-bridge
-EVM Token Bridge project for LimeAcademy seson 2
+EVM Token Bridge project for LimeAcademy season 2
