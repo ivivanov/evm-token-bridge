@@ -6,6 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AcmeToken is ERC20PresetMinterPauser, Ownable {
     constructor(uint256 initialBalance) ERC20PresetMinterPauser("AcmeToken", "ACM") {
-        mint(msg.sender, initialBalance);
+        _mint(msg.sender, initialBalance);
     }
 }

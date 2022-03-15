@@ -2,7 +2,7 @@ import { ethers } from 'hardhat'
 
 async function deployer (contractName: string) {
   const contractFactory = await ethers.getContractFactory(contractName)
-  const contract = await contractFactory.deploy()
+  const contract = await contractFactory.deploy(0)
   console.log(`${contractName} deployed to: ${contract.address}`)
 
   return await contract.deployed()
