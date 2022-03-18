@@ -1,16 +1,20 @@
 import { ethers } from 'hardhat'
+import { Contract } from 'ethers'
 
-async function deployer (contractName: string) {
+async function deployer (contractName: string, ...args: any[]): Promise<Contract> {
   const contractFactory = await ethers.getContractFactory(contractName)
-  const contract = await contractFactory.deploy(0)
+  const contract = await contractFactory.deploy(...args)
+  await contract.deployed()
+
   console.log(`${contractName} deployed to: ${contract.address}`)
 
-  return await contract.deployed()
+  return contract
 }
 
-async function main () {
-  await deployer('AcmeToken')
-  await deployer('Escrow')
+async function main (): Promise<void> {
+  const contract = await deployer('AcmeToken', ethers.utils.parseEther('999'))
+  await deployer('MainEscrow', contract.address)
+  await deployer('SideEscrow')
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -9,8 +9,8 @@
     "test:local": "npx hardhat --network localhost test",
     "build": "npx hardhat compile",
     "deploy:local": "npx hardhat run ./scripts/deploy.ts --network localhost",
-    "deploy:ropsten": "npx env-cmd --silent -f ropsten.env npx hardhat run ./scripts/deploy.ts --network ropsten",
-    "deploy:rinkeby": "npx env-cmd --silent -f rinkeby.env npx hardhat run ./scripts/deploy.ts --network rinkeby"
+    "deploy:ropsten": "npx env-cmd --silent -f ./env/ropsten.env npx hardhat run ./scripts/deploy.ts --network ropsten",
+    "deploy:rinkeby": "npx env-cmd --silent -f ./env/rinkeby.env npx hardhat run ./scripts/deploy.ts --network rinkeby"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
@@ -24,7 +24,6 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "chai": "^4.2.0",
-    "dotenv": "^10.0.0",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-config-standard": "^16.0.3",
