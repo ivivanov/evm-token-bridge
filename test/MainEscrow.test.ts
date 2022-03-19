@@ -13,21 +13,21 @@ describe('MainEscrow', function name () {
   let escrow: Contract
 
   beforeEach(async () => {
-    acmeToken = await deployContract(ownerWallet, AcmeToken, [999])
-    escrow = await deployContract(ownerWallet, MainEscrow, [acmeToken.address])
+    acmeToken = await deployContract(ownerWallet, AcmeToken, [999, 'Acme', 'ACM'])
+    escrow = await deployContract(ownerWallet, MainEscrow)
   })
 
   it('Lock emits LockSuccess event', async () => {
     await acmeToken.increaseAllowance(escrow.address, 2)
 
-    await expect(escrow.lock(2))
+    await expect(escrow.lock(acmeToken.address, 2))
       .to.emit(escrow, 'LockSuccess')
       .withArgs(ownerWallet.address, escrow.address, 2)
   })
 
   it('Lock reduce sender balance', async () => {
     await acmeToken.increaseAllowance(escrow.address, 2)
-    await escrow.lock(2)
+    await escrow.lock(acmeToken.address, 2)
 
     expect(await acmeToken.balanceOf(ownerWallet.address)).to.equal(999 - 2)
   })
@@ -37,24 +37,24 @@ describe('MainEscrow', function name () {
     const acmeMyWallet = acmeToken.connect(myWallet)
     await acmeMyWallet.increaseAllowance(escrow.address, 2)
     const escrowMyWallet = escrow.connect(myWallet)
-    await escrowMyWallet.lock(2)
+    await escrowMyWallet.lock(acmeToken.address, 2)
 
     expect(await acmeToken.balanceOf(myWallet.address)).to.equal(7 - 2)
   })
 
   it('Release emits ReleaseSuccess event', async () => {
     await acmeToken.increaseAllowance(escrow.address, 2)
-    await escrow.lock(2)
+    await escrow.lock(acmeToken.address, 2)
 
-    await expect(escrow.release())
+    await expect(escrow.release(acmeToken.address, 2))
       .to.emit(escrow, 'ReleaseSuccess')
       .withArgs(ownerWallet.address, 2)
   })
 
   it('Release increase sender allowance', async () => {
     await acmeToken.increaseAllowance(escrow.address, 2)
-    await escrow.lock(2)
-    await escrow.release()
+    await escrow.lock(acmeToken.address, 2)
+    await escrow.release(acmeToken.address, 2)
 
     expect(await acmeToken.allowance(escrow.address, ownerWallet.address)).to.equal(2)
   })
@@ -65,10 +65,10 @@ describe('MainEscrow', function name () {
     await acmeMyWallet.increaseAllowance(escrow.address, 2)
     const escrowMyWallet = escrow.connect(myWallet)
 
-    await escrowMyWallet.lock(2)
+    await escrowMyWallet.lock(acmeToken.address, 2)
     expect(await acmeToken.balanceOf(myWallet.address)).to.equal(7 - 2)
 
-    await escrowMyWallet.release()
+    await escrowMyWallet.release(acmeToken.address, 2)
     expect(await acmeToken.allowance(escrow.address, myWallet.address)).to.equal(2)
     expect(await acmeToken.balanceOf(myWallet.address)).to.equal(7 - 2)
 

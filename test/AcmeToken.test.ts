@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { ethers } from 'ethers'
+import { Contract } from 'ethers'
 import { solidity, deployContract, MockProvider } from 'ethereum-waffle'
 
 import AcmeToken from '../artifacts/contracts/AcmeToken.sol/AcmeToken.json'
@@ -8,10 +8,10 @@ use(solidity)
 
 describe('AcmeToken', function name () {
   const [wallet, walletTo] = new MockProvider().getWallets()
-  let acmeToken: ethers.Contract
+  let acmeToken: Contract
 
   beforeEach(async () => {
-    acmeToken = await deployContract(wallet, AcmeToken, [1000])
+    acmeToken = await deployContract(wallet, AcmeToken, [1000, 'Random', 'RN'])
   })
 
   it('Assigns initial balance', async () => {

@@ -1,39 +1,49 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+
 import "./AcmeToken.sol";
 
 contract SideEscrow is Ownable {
-    // todo make it more generic - ERC20PresetMinterPauser/ERC20
-    AcmeToken public Acme;
+    mapping(address => bool) private _isSupportedToken;
+    address[] private _supportedTokens;
 
     event ReleaseSuccess(address to, uint256 amount);
     event LockSuccess(address sender, uint256 amount);
 
-    constructor() {
-        // Contract should be the owner of the token on the target chain.
-        // This way we can easily mint/burn and maintain the correct total supply
-        // todo after its generic token I should find a way to delegate the
-        // rights to burn/mint. This way there is no need to own the token
-        // and could be any token
-        Acme = new AcmeToken(0);
+    modifier isSupported(IERC20 token) {
+        require(_isSupportedToken[address(token)], "Not supported token");
+        _;
     }
 
-    function lock(uint256 amount) public {
+    function lock(ERC20Burnable token, uint256 amount) public isSupported(token) {
         require(amount > 0, "Can not lock 0");
-        require(Acme.allowance(_msgSender(), address(this)) >= amount, "Not enough allowance");
+        require(token.allowance(_msgSender(), address(this)) >= amount, "Not enough allowance");
 
-        Acme.transferFrom(_msgSender(), address(this), amount);
-        Acme.burn(amount);
+        token.transferFrom(_msgSender(), address(this), amount);
+        token.burn(amount);
 
         emit LockSuccess(_msgSender(), amount);
     }
 
-    function release(address to, uint256 amount) external onlyOwner {
+    function release(ERC20PresetMinterPauser token, address to, uint256 amount) external onlyOwner isSupported(token) {
         require(amount > 0, "Can not mint 0");
 
-        Acme.mint(to, amount);
+        token.mint(to, amount);
 
         emit ReleaseSuccess(to, amount);
+    }
+
+    function supportedTokens() external view returns (address[] memory) {
+        return _supportedTokens;
+    }
+
+    function addNewERC20(string memory name, string memory symbol) external onlyOwner {
+        IERC20 token = new ERC20PresetMinterPauser(name, symbol);
+        _isSupportedToken[address(token)] = true;
+        _supportedTokens.push(address(token));
     }
 }
