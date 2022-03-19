@@ -1,3 +1,4 @@
+env
 typechain-types
 node_modules
 *.env
