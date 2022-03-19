@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./AcmeToken.sol";
 
 contract MainEscrow is Context {
     mapping(address => mapping(address => uint256)) private _balances;

@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
-import "./AcmeToken.sol";
-
 contract SideEscrow is Ownable {
     mapping(address => bool) private _isSupportedToken;
     address[] private _supportedTokens;
