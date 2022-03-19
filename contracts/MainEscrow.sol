@@ -1,38 +1,33 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./AcmeToken.sol";
 
-import "hardhat/console.sol";
-
 contract MainEscrow is Context {
-    AcmeToken private _acme;
-    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _balances;
 
     event LockSuccess(address sender, address escrow, uint256 amount);
     event ReleaseSuccess(address sender, uint256 amount);
 
-    constructor(AcmeToken acme) {
-        _acme = acme;
-    }
 
-    function lock(uint256 amount) external {
+    function lock(IERC20 token, uint256 amount) external {
         require(amount > 0, "Can not lock 0");
-        require(_acme.allowance(_msgSender(), address(this)) >= amount, "Not enough allowance");
+        require(token.allowance(_msgSender(), address(this)) >= amount, "Not enough allowance");
 
-        _acme.transferFrom(_msgSender(), address(this), amount);
-        _balances[_msgSender()] = amount;
+        token.transferFrom(_msgSender(), address(this), amount);
+        _balances[_msgSender()][address(token)] = _balances[_msgSender()][address(token)] + amount;
 
         emit LockSuccess(_msgSender(), address(this), amount);
     }
 
-    function release() external {
-        require(_balances[_msgSender()] > 0, "Nothing to claim");
+    function release(IERC20 token, uint256 amount) external {
+        require(_balances[_msgSender()][address(token)] > 0, "Nothing to claim");
+        require(_balances[_msgSender()][address(token)] >= amount, "Not enough locked balance");
 
-        uint256 claimable = _balances[_msgSender()];
-        _balances[_msgSender()] = 0;
-        _acme.increaseAllowance(_msgSender(), claimable);
+        _balances[_msgSender()][address(token)] = _balances[_msgSender()][address(token)] - amount;
+        token.approve(_msgSender(), amount);
 
-        emit ReleaseSuccess(_msgSender(), claimable);
+        emit ReleaseSuccess(_msgSender(), amount);
     }
 }
