@@ -85,5 +85,21 @@ describe('SideEscrow', function name () {
       .withArgs(myWallet.address, 7)
   })
 
+  it('Adding duplicate token should revert', async () => {
+    await expect(sideEscrow.addNewERC20('Acme', 'ACM'))
+      .to.be.revertedWith('Duplicate names not allowed')
+  })
+
+  it('Adding new token should should emit AddNewERC20Success', async () => {
+    await expect(sideEscrow.addNewERC20('NewToken', 'NEW'))
+      .to.emit(sideEscrow, 'AddNewERC20Success')
+  })
+
+  it('Adding new token should increase supported tokens list', async () => {
+    await sideEscrow.addNewERC20('NewToken', 'NEW')
+    const tokens = await sideEscrow.supportedTokens()
+    expect(tokens.length).to.equal(2)
+  })
+
   // todo implement & test receive, fallback methods
 })
