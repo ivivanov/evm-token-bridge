@@ -8,7 +8,7 @@
     "test": "npx hardhat test",
     "test:local": "npx hardhat --network localhost test",
     "build": "npx hardhat compile",
-    "deploy:local": "npx hardhat run ./scripts/deploy.ts --network localhost",
+    "deploy:local": "npx env-cmd --silent -f ./env/local.env npx hardhat run ./scripts/deploy.ts --network localhost",
     "deploy:ropsten": "npx env-cmd --silent -f ./env/ropsten.env npx hardhat run ./scripts/deploy.ts --network ropsten",
     "deploy:rinkeby": "npx env-cmd --silent -f ./env/rinkeby.env npx hardhat run ./scripts/deploy.ts --network rinkeby"
   },
