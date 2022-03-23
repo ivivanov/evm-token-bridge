@@ -1,18 +1,22 @@
+import { ethers } from 'hardhat'
 import { expect, use } from 'chai'
 import { Contract } from 'ethers'
-import { solidity, deployContract, MockProvider } from 'ethereum-waffle'
+import { solidity, deployContract } from 'ethereum-waffle'
 
 import AcmeToken from '../artifacts/contracts/AcmeToken.sol/AcmeToken.json'
 import MainEscrow from '../artifacts/contracts/MainEscrow.sol/MainEscrow.json'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 use(solidity)
 
 describe('MainEscrow', function name () {
-  const [ownerWallet, myWallet] = new MockProvider().getWallets()
+  let ownerWallet: SignerWithAddress
+  let myWallet: SignerWithAddress
   let acmeToken: Contract
   let escrow: Contract
 
   beforeEach(async () => {
+    [ownerWallet, myWallet] = await ethers.getSigners()
     acmeToken = await deployContract(ownerWallet, AcmeToken, [999, 'Acme', 'ACM'])
     escrow = await deployContract(ownerWallet, MainEscrow)
   })

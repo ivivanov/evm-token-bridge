@@ -1,18 +1,22 @@
+import { ethers } from 'hardhat'
 import { expect, use } from 'chai'
-import { Contract, ethers } from 'ethers'
-import { solidity, deployContract, MockProvider } from 'ethereum-waffle'
+import { Contract } from 'ethers'
+import { solidity, deployContract } from 'ethereum-waffle'
 
 import AcmeToken from '../artifacts/contracts/AcmeToken.sol/AcmeToken.json'
 import SideEscrow from '../artifacts/contracts/SideEscrow.sol/SideEscrow.json'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 use(solidity)
 
 describe('SideEscrow', function name () {
-  const [ownerWallet, myWallet] = new MockProvider().getWallets()
+  let ownerWallet: SignerWithAddress
+  let myWallet: SignerWithAddress
   let sideEscrow: Contract
   let rnToken: Contract
 
   beforeEach(async () => {
+    [ownerWallet, myWallet] = await ethers.getSigners()
     sideEscrow = await deployContract(ownerWallet, SideEscrow)
     await sideEscrow.addNewERC20('Acme', 'ACM')
     rnToken = await deployContract(ownerWallet, AcmeToken, [1, 'Random', 'RN'])
@@ -90,7 +94,7 @@ describe('SideEscrow', function name () {
       .to.be.revertedWith('Duplicate names not allowed')
   })
 
-  it('Adding new token should should emit AddNewERC20Success', async () => {
+  it('Adding new token should emit AddNewERC20Success', async () => {
     await expect(sideEscrow.addNewERC20('NewToken', 'NEW'))
       .to.emit(sideEscrow, 'AddNewERC20Success')
   })

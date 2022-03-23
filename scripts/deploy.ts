@@ -12,7 +12,7 @@ async function deployer (contractName: string, ...args: any[]): Promise<Contract
 }
 
 async function main (): Promise<void> {
-  await deployer('AcmeToken', ethers.utils.parseEther('999'), "Acme", "ACM")
+  await deployer('AcmeToken', ethers.utils.parseEther('999'), 'Acme', 'ACM')
   await deployer('MainEscrow')
   await deployer('SideEscrow')
 }

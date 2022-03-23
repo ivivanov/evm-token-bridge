@@ -1,16 +1,20 @@
+import { ethers } from 'hardhat'
 import { expect, use } from 'chai'
 import { Contract } from 'ethers'
-import { solidity, deployContract, MockProvider } from 'ethereum-waffle'
+import { solidity, deployContract } from 'ethereum-waffle'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 import AcmeToken from '../artifacts/contracts/AcmeToken.sol/AcmeToken.json'
 
 use(solidity)
 
 describe('AcmeToken', function name () {
-  const [wallet, walletTo] = new MockProvider().getWallets()
+  let wallet: SignerWithAddress
+  let walletTo: SignerWithAddress
   let acmeToken: Contract
 
   beforeEach(async () => {
+    [wallet, walletTo] = await ethers.getSigners()
     acmeToken = await deployContract(wallet, AcmeToken, [1000, 'Random', 'RN'])
   })
 
@@ -45,15 +49,5 @@ describe('AcmeToken', function name () {
     await tokenFromOtherWallet.transfer(wallet.address, 1)
     expect(await acmeToken.balanceOf(walletTo.address)).to.equal(6)
     expect(await acmeToken.balanceOf(wallet.address)).to.equal(1000 - 6)
-  })
-
-  it('Calls totalSupply on AcmeToken contract', async () => {
-    await acmeToken.totalSupply()
-    expect('totalSupply').to.be.calledOnContract(acmeToken)
-  })
-
-  it('Calls balanceOf with sender address on AcmeToken contract', async () => {
-    await acmeToken.balanceOf(wallet.address)
-    expect('balanceOf').to.be.calledOnContractWith(acmeToken, [wallet.address])
   })
 })
