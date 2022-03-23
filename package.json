@@ -5,8 +5,8 @@
   "scripts": {
     "lint": "npx ts-standard && prettier --list-different 'contracts/**/*.sol'",
     "lint:fix": "npx ts-standard --fix && prettier --write 'contracts/**/*.sol'",
+    "coverage": "npx hardhat coverage",
     "test": "npx hardhat test",
-    "test:local": "npx hardhat --network localhost test",
     "build": "npx hardhat compile",
     "deploy:local": "npx env-cmd --silent -f ./env/local.env npx hardhat run ./scripts/deploy.ts --network localhost",
     "deploy:ropsten": "npx env-cmd --silent -f ./env/ropsten.env npx hardhat run ./scripts/deploy.ts --network ropsten",

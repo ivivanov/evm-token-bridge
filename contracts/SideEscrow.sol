@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
-import "hardhat/console.sol";
-
 contract SideEscrow is Ownable {
     mapping(address => bool) private _isSupportedToken;
     mapping(string => string) private _supportedTokenNames;
@@ -32,8 +30,7 @@ contract SideEscrow is Ownable {
             "Not enough allowance"
         );
 
-        token.transferFrom(_msgSender(), address(this), amount);
-        token.burn(amount);
+        token.burnFrom(msg.sender, amount);
 
         emit LockSuccess(_msgSender(), amount);
     }
@@ -42,7 +39,9 @@ contract SideEscrow is Ownable {
         ERC20PresetMinterPauser token,
         address to,
         uint256 amount
-    ) external onlyOwner isSupported(token) {
+    ) external isSupported(token) {
+        // todo require validator to confirm the lock transaction on the main chain
+        // is successfuly mined/confirmed and the same amount is locked
         require(amount > 0, "Can not mint 0");
 
         token.mint(to, amount);
