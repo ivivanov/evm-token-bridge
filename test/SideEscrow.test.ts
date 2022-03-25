@@ -2,10 +2,10 @@ import { ethers } from 'hardhat'
 import { expect, use } from 'chai'
 import { Contract } from 'ethers'
 import { solidity, deployContract } from 'ethereum-waffle'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 import AcmeToken from '../artifacts/contracts/AcmeToken.sol/AcmeToken.json'
 import SideEscrow from '../artifacts/contracts/SideEscrow.sol/SideEscrow.json'
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 use(solidity)
 
