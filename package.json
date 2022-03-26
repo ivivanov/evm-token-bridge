@@ -7,9 +7,12 @@
     "lint:fix": "npx ts-standard --fix && prettier --write 'contracts/**/*.sol'",
     "coverage": "npx hardhat coverage",
     "test": "npx hardhat test",
-    "build": "npx hardhat compile",
-    "deploy:main": "npx hardhat deploy --name MainEscrow --network localhost",
-    "deploy:side": "npx hardhat deploy --name SideEscrow --network rinkeby"
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "prepare": "yarn clean && yarn compile",
+    "deploy:local": "yarn prepare && npx hardhat deploy --name Bridge --network localhost",
+    "deploy:rinkeby": "yarn prepare && npx hardhat deploy --name Bridge --network rinkeby",
+    "deploy:ropsten": "yarn prepare && npx hardhat deploy --name Bridge --network ropsten"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",

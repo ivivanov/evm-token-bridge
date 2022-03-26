@@ -5,7 +5,7 @@ import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
 import 'hardhat-gas-reporter'
 import 'solidity-coverage'
-import { HardhatUserConfig, task} from 'hardhat/config'
+import { HardhatUserConfig, task } from 'hardhat/config'
 
 dotenv.config()
 
@@ -14,9 +14,21 @@ task('deploy', 'Deploys contract by given name')
   .setAction(async (taskArgs: any, hre: any) => {
     const contractFactory = await hre.ethers.getContractFactory(taskArgs.name)
     const contract = await contractFactory.deploy()
-    await contract.deployed()
+    const minTxConfirmations = hre.network.name === 'localhost' ? 1 : 5
+    console.log(`\nWaiting for ${minTxConfirmations} confirmations...`)
+    const receipt = await contract.deployTransaction.wait(minTxConfirmations)
+    console.log(`\n${taskArgs.name} deployed to: ${contract.address} confirmations: ${receipt.confirmations}`)
 
-    console.log(`${taskArgs.name} deployed to: ${contract.address}`)
+    if (hre.network.name !== 'localhost') {
+      try {
+        console.log('\nVerifying contract...')
+        await hre.run('verify:verify', { address: contract.address })
+      } catch (err: any) {
+        if (err.message.includes('Reason: Already Verified')) {
+          console.log('\nContract is already verified!')
+        }
+      }
+    }
   })
 
 const config: HardhatUserConfig = {
