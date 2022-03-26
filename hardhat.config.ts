@@ -1,30 +1,34 @@
-import { HardhatUserConfig, task } from 'hardhat/config'
+import * as dotenv from 'dotenv'
+
 import '@nomiclabs/hardhat-etherscan'
 import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
 import 'hardhat-gas-reporter'
 import 'solidity-coverage'
+import { HardhatUserConfig, task} from 'hardhat/config'
 
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners()
+dotenv.config()
 
-  for (const account of accounts) {
-    console.log(account.address)
-  }
-})
+task('deploy', 'Deploys contract by given name')
+  .addParam('name', 'Contract name')
+  .setAction(async (taskArgs: any, hre: any) => {
+    const contractFactory = await hre.ethers.getContractFactory(taskArgs.name)
+    const contract = await contractFactory.deploy()
+    await contract.deployed()
+
+    console.log(`${taskArgs.name} deployed to: ${contract.address}`)
+  })
 
 const config: HardhatUserConfig = {
   solidity: '0.8.4',
   networks: {
     ropsten: {
-      url: process.env.NODE_URL ?? '',
+      url: process.env.ROPSTEN_URL ?? '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
     },
     rinkeby: {
-      url: process.env.NODE_URL ?? '',
+      url: process.env.RINKEBY_URL ?? '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
     }
