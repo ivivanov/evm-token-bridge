@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
+// This token is only for testing purpouses
 contract AcmeToken is ERC20PresetMinterPauser {
     constructor(
         uint256 initialBalance,

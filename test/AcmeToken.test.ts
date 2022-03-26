@@ -8,6 +8,7 @@ import AcmeToken from '../artifacts/contracts/AcmeToken.sol/AcmeToken.json'
 
 use(solidity)
 
+// This tests are intended to serve as an example how to interact with ERC20 token
 describe('AcmeToken', function name () {
   let wallet: SignerWithAddress
   let walletTo: SignerWithAddress
