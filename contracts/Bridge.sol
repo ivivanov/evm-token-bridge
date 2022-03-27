@@ -13,7 +13,7 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
     mapping(address => mapping(address => uint256)) private _balances;
     mapping(address => address) private _sourceToWrapped;
     SharedStructs.WrappedToken[] private _wrappedTokens;
-    
+
     event LockSuccess(address sender, address token, uint256 amount);
     event ReleaseSuccess(address sender, uint256 amount);
     event MintSuccess(address to, uint256 amount);
@@ -35,10 +35,6 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
 
     function lock(IERC20 token, uint256 amount) external override {
         require(amount > 0, "Can not lock 0");
-        require(
-            token.allowance(_msgSender(), address(this)) >= amount,
-            "Not enough allowance"
-        );
 
         token.transferFrom(_msgSender(), address(this), amount);
         _balances[_msgSender()][address(token)] =

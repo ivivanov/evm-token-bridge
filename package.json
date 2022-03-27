@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "EVM Token Bridge",
   "scripts": {
-    "lint": "ts-standard && prettier --list-different 'contracts/**/*.sol'",
-    "lint:fix": "ts-standard --fix && prettier --write 'contracts/**/*.sol'",
+    "lint": "prettier --list-different 'contracts/**/*.sol' && ts-standard",
+    "lint:fix": "prettier --write 'contracts/**/*.sol' && ts-standard --fix",
     "coverage": "hardhat coverage",
     "test": "hardhat test",
     "clean": "hardhat clean",
