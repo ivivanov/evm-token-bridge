@@ -132,4 +132,13 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
     {
         return _wrappedTokens;
     }
+
+    function lockedBalance(address token)
+    external
+        view
+        override
+        returns (uint256)
+    {
+        return _balances[_msgSender()][token];
+    }
 }

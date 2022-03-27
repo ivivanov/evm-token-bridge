@@ -189,4 +189,11 @@ describe('Bridge', function name () {
     expect(token.sourceToken).to.equal(sourceToken)
     expect(token.sourceChainId).to.equal(sourceChainId)
   })
+
+  it('LockedBalance should return valid data', async () => {
+    await acmeToken.increaseAllowance(bridge.address, 2)
+    await bridge.lock(acmeToken.address, 2)
+
+    expect(await bridge.lockedBalance(acmeToken.address)).to.equal(2)
+  })
 })
