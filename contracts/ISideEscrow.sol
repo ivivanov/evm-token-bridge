@@ -1,19 +1,26 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "./IERC20Burnable.sol";
-import "./IERC20Mintable.sol";
+import "./SharedStructs.sol";
 
 interface ISideEscrow {
-    function burn(IERC20Burnable token, uint256 amount) external;
+    function burn(address source, uint256 amount) external;
 
     function mint(
-        IERC20Mintable token,
+        address source,
         address to,
         uint256 amount
     ) external;
 
-    function supportedTokens() external view returns (address[] memory);
+    function addNewERC20(
+        string memory name,
+        string memory symbol,
+        address sourceAddress,
+        uint8 souceChainId
+    ) external;
 
-    function addNewERC20(string memory name, string memory symbol) external;
+    function wrappedTokens()
+        external
+        view
+        returns (SharedStructs.WrappedToken[] memory);
 }
