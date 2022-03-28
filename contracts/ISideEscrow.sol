@@ -12,11 +12,11 @@ interface ISideEscrow {
         uint256 amount
     ) external;
 
-    function addNewERC20(
+    function wrapToken(
         string memory name,
         string memory symbol,
         address sourceAddress,
-        uint8 souceChainId
+        uint16 sourceChainId
     ) external;
 
     function wrappedTokens()

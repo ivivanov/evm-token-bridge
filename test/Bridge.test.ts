@@ -99,7 +99,7 @@ describe('Bridge', function name () {
   })
 
   it('Mint emits MintSuccess event', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+    await bridge.wrapToken('wrapped Acme', 'wACM', acmeToken.address, 1)
     const wrappedTokens = await bridge.wrappedTokens()
 
     await expect(bridge.mint(wrappedTokens[0].sourceToken, myWallet.address, 7))
@@ -108,7 +108,7 @@ describe('Bridge', function name () {
   })
 
   it('Mint mints new tokens', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+    await bridge.wrapToken('wrapped Acme', 'wACM', acmeToken.address, 1)
     const wrappedTokens = await bridge.wrappedTokens()
     const token = new ethers.Contract(wrappedTokens[0].token, AcmeToken.abi, myWallet)
 
@@ -119,7 +119,7 @@ describe('Bridge', function name () {
   })
 
   it('Burn emits BurnSuccess event', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+    await bridge.wrapToken('wrapped Acme', 'wACM', acmeToken.address, 1)
     const wrappedTokens = await bridge.wrappedTokens()
     const token = new ethers.Contract(wrappedTokens[0].token, AcmeToken.abi, ownerWallet)
     await bridge.mint(wrappedTokens[0].sourceToken, ownerWallet.address, 7)
@@ -131,7 +131,7 @@ describe('Bridge', function name () {
   })
 
   it('Burn burns sent amount', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+    await bridge.wrapToken('wrapped Acme', 'wACM', acmeToken.address, 1)
     const wrappedTokens = await bridge.wrappedTokens()
     const token = new ethers.Contract(wrappedTokens[0].token, AcmeToken.abi, ownerWallet)
     await bridge.mint(wrappedTokens[0].sourceToken, ownerWallet.address, 7)
@@ -143,7 +143,7 @@ describe('Bridge', function name () {
   })
 
   it('Can Burn from other wallet', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+    await bridge.wrapToken('wrapped Acme', 'wACM', acmeToken.address, 1)
     const wrappedTokens = await bridge.wrappedTokens()
     const token = new ethers.Contract(wrappedTokens[0].token, AcmeToken.abi, myWallet)
     await bridge.mint(wrappedTokens[0].sourceToken, myWallet.address, 7)
@@ -155,24 +155,43 @@ describe('Bridge', function name () {
     expect(await token.totalSupply()).to.equal(0)
   })
 
-  it('Adding duplicate token should revert', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+  it('Adding wrapped token with the same source address should revert', async () => {
+    await bridge.wrapToken('rn1', 'rn2', acmeToken.address, 1)
 
-    await expect(bridge.addNewERC20('rn', 'rn', acmeToken.address, 1))
-      .to.be.revertedWith('Token already added')
+    await expect(bridge.wrapToken('rn1', 'rn2', acmeToken.address, 1))
+      .to.be.revertedWith('Wrapped token already added')
   })
 
-  it('Adding new token should emit AddNewERC20Success', async () => {
-    await expect(bridge.addNewERC20('rn', 'rn', acmeToken.address, 1))
-      .to.emit(bridge, 'AddNewERC20Success')
+  it('Adding wrapped token with empty name should revert', async () => {
+    await expect(bridge.wrapToken('', 'rn', acmeToken.address, 1))
+      .to.be.revertedWith('Name is required')
+  })
+
+  it('Adding wrapped token with empty symbol should revert', async () => {
+    await expect(bridge.wrapToken('rn', '', acmeToken.address, 1))
+      .to.be.revertedWith('Symbol is required')
+  })
+
+  it('Adding wrapped token with equal symbol and name should revert', async () => {
+    await expect(bridge.wrapToken('rn', 'rn', acmeToken.address, 1))
+      .to.be.revertedWith('Can not be the same')
+  })
+
+  it('Adding wrapped token with chain_id = 0 should revert', async () => {
+    await expect(bridge.wrapToken('rn1', 'rn2', acmeToken.address, 0))
+      .to.be.revertedWith('Invalid source chain id')
+  })
+
+  it('Adding new token should emit wrapTokenSuccess', async () => {
+    await expect(bridge.wrapToken('rn1', 'rn2', acmeToken.address, 1))
+      .to.emit(bridge, 'WrapTokenSuccess')
   })
 
   it('Adding new token should increase wrapped tokens list', async () => {
-    await bridge.addNewERC20('wrapped Acme', 'wACM', acmeToken.address, 1)
+    await bridge.wrapToken('wrapped Acme', 'wACM', acmeToken.address, 1)
     const wrappedTokens = await bridge.wrappedTokens()
 
     expect(wrappedTokens.length).to.equal(1)
-    expect
   })
 
   it('Wrapped tokens array should contain valid data', async () => {
@@ -180,7 +199,7 @@ describe('Bridge', function name () {
     const symbol = 'wACM'
     const sourceToken = acmeToken.address
     const sourceChainId = 1
-    await bridge.addNewERC20(name, symbol, sourceToken, sourceChainId)
+    await bridge.wrapToken(name, symbol, sourceToken, sourceChainId)
     const wrappedTokens = await bridge.wrappedTokens()
     const token = wrappedTokens[0]
 

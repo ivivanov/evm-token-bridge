@@ -18,7 +18,7 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
     event ReleaseSuccess(address sender, uint256 amount);
     event MintSuccess(address to, uint256 amount);
     event BurnSuccess(address sender, uint256 amount);
-    event AddNewERC20Success(address newToken);
+    event WrapTokenSuccess(address newToken);
 
     modifier isSupported(address source) {
         require(_sourceToWrapped[source] != address(0), "Not supported token");
@@ -97,17 +97,27 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
         emit MintSuccess(to, amount);
     }
 
-    function addNewERC20(
+    function wrapToken(
         string memory name,
         string memory symbol,
         address sourceAddress,
-        uint8 souceChainId
+        uint16 sourceChainId
     ) external override {
-        // todo maybe? validate sourdeAddress exists on sourceChainId
+        // todo validate the sourceAddress is not a token on the same network
+        // todo ?maybe validate sourdeAddress exists on sourceChainId
+        // todo ?how to prevent non owner of source token to add wrapped token
         require(
             _sourceToWrapped[sourceAddress] == address(0),
-            "Token already added"
+            "Wrapped token already added"
         );
+        require(bytes(name).length != 0, "Name is required");
+        require(bytes(symbol).length != 0, "Symbol is required");
+        require(
+            keccak256(abi.encodePacked((name))) !=
+                keccak256(abi.encodePacked((symbol))),
+            "Can not be the same"
+        );
+        require(sourceChainId != 0, "Invalid source chain id");
 
         IERC20 token = new ERC20PresetMinterPauser(name, symbol);
         _sourceToWrapped[sourceAddress] = address(token);
@@ -117,11 +127,11 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
                 symbol: symbol,
                 token: address(token),
                 sourceToken: sourceAddress,
-                sourceChainId: souceChainId
+                sourceChainId: sourceChainId
             })
         );
 
-        emit AddNewERC20Success(address(token));
+        emit WrapTokenSuccess(address(token));
     }
 
     function wrappedTokens()
@@ -134,7 +144,7 @@ contract Bridge is Context, IMainEscrow, ISideEscrow {
     }
 
     function lockedBalance(address token)
-    external
+        external
         view
         override
         returns (uint256)

@@ -7,6 +7,6 @@ library SharedStructs {
         string symbol;
         address token;
         address sourceToken;
-        uint8 sourceChainId;
+        uint16 sourceChainId;
     }
 }
