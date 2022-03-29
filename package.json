@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "description": "EVM Token Bridge",
   "scripts": {
-    "lint": "npx ts-standard && prettier --list-different 'contracts/**/*.sol'",
-    "lint:fix": "npx ts-standard --fix && prettier --write 'contracts/**/*.sol'",
-    "coverage": "npx hardhat coverage",
-    "test": "npx hardhat test",
-    "build": "npx hardhat compile",
-    "deploy:local": "npx env-cmd --silent -f ./env/local.env npx hardhat run ./scripts/deploy.ts --network localhost",
-    "deploy:ropsten": "npx env-cmd --silent -f ./env/ropsten.env npx hardhat run ./scripts/deploy.ts --network ropsten",
-    "deploy:rinkeby": "npx env-cmd --silent -f ./env/rinkeby.env npx hardhat run ./scripts/deploy.ts --network rinkeby"
+    "lint": "prettier --list-different 'contracts/**/*.sol' && ts-standard",
+    "lint:fix": "prettier --write 'contracts/**/*.sol' && ts-standard --fix",
+    "coverage": "hardhat coverage",
+    "test": "hardhat test",
+    "clean": "hardhat clean",
+    "compile": "hardhat compile",
+    "prepare": "yarn clean && yarn compile",
+    "deploy:local": "yarn prepare && npx hardhat deploy --name Bridge --network localhost",
+    "deploy:rinkeby": "yarn prepare && npx hardhat deploy --name Bridge --network rinkeby",
+    "deploy:ropsten": "yarn prepare && npx hardhat deploy --name Bridge --network ropsten"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
@@ -24,6 +26,7 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "chai": "^4.2.0",
+    "dotenv": "^16.0.0",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-config-standard": "^16.0.3",
