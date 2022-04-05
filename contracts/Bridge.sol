@@ -1,154 +1,166 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "./Utils.sol";
+import "./Structs.sol";
+import "./IBridge.sol";
 
-import "./IMainEscrow.sol";
-import "./ISideEscrow.sol";
-import "./SharedStructs.sol";
+contract Bridge is IBridge {
+    Structs.WrappedToken[] public _wrappedTokens;
 
-contract Bridge is Context, IMainEscrow, ISideEscrow {
-    mapping(address => mapping(address => uint256)) private _balances;
-    mapping(address => address) private _sourceToWrapped;
-    SharedStructs.WrappedToken[] private _wrappedTokens;
+    mapping(address => address) private _nativeToWrapped;
+    address private _trustedSigner;
 
-    event LockSuccess(address sender, address token, uint256 amount);
-    event ReleaseSuccess(address sender, uint256 amount);
-    event MintSuccess(address to, uint256 amount);
-    event BurnSuccess(address sender, uint256 amount);
-    event WrapTokenSuccess(address newToken);
-
-    modifier isSupported(address source) {
-        require(_sourceToWrapped[source] != address(0), "Not supported token");
-        _;
+    constructor(address trustedSigner) {
+        _trustedSigner = trustedSigner;
     }
 
     receive() external payable {
-        revert("Bridging ETH is not supported");
+        revert("Reverted");
     }
 
     fallback() external payable {
-        revert("Something went wrong");
+        revert("Reverted");
     }
 
-    function lock(IERC20 token, uint256 amount) external override {
-        require(amount > 0, "Can not lock 0");
-
-        token.transferFrom(_msgSender(), address(this), amount);
-        _balances[_msgSender()][address(token)] =
-            _balances[_msgSender()][address(token)] +
-            amount;
-
-        emit LockSuccess(_msgSender(), address(token), amount);
-    }
-
-    function release(IERC20 token, uint256 amount) external override {
-        // todo require validator to confirm the lock transaction on the side chain
-        // is successfuly mined/confirmed and the same amount is burned
-        require(
-            _balances[_msgSender()][address(token)] >= amount,
-            "Not enough locked balance"
+    // Checks if the message is siggned from a trusted signer
+    modifier isTrustedSigner(bytes memory msgHash, bytes memory msgSigned) {
+        address signer = Utils.recoverSignerFromSignedMessage(
+            msgHash,
+            msgSigned
         );
-
-        _balances[_msgSender()][address(token)] =
-            _balances[_msgSender()][address(token)] -
-            amount;
-        token.transfer(_msgSender(), amount);
-
-        emit ReleaseSuccess(_msgSender(), amount);
+        require(signer == _trustedSigner, "Bad signer");
+        _;
     }
 
-    // source - the address of the source token which has wrapped version on the side chain
-    function burn(address source, uint256 amount)
+    // Check if function arguments match the txHash
+    modifier isValidTx(
+        uint16 chainId,
+        address token,
+        uint256 amount,
+        address receiver,
+        bytes memory txHash
+    ) {
+        require(
+            Utils.hashArgs(chainId, token, amount, receiver) ==
+                Utils.bytesToTxHash(txHash),
+            "Bad args"
+        );
+        _;
+    }
+
+    function lock(
+        uint16 targetChain,
+        address nativeToken,
+        uint256 amount,
+        address receiver
+    ) external override {
+        require(amount > 0, "Lock 0");
+
+        IERC20(nativeToken).transferFrom(receiver, address(this), amount);
+
+        emit Lock(
+            targetChain,
+            address(nativeToken),
+            receiver,
+            amount,
+            0 // todo incorporate bridge fees
+        );
+    }
+
+    function release(
+        uint16 sourceChain,
+        address nativeToken,
+        uint256 amount,
+        address receiver,
+        bytes memory txHash,
+        bytes memory txSigned
+    )
         external
         override
-        isSupported(source)
+        isTrustedSigner(txHash, txSigned)
+        isValidTx(sourceChain, nativeToken, amount, receiver, txHash)
     {
-        ERC20Burnable token = ERC20Burnable(_sourceToWrapped[source]);
-        require(amount > 0, "Can not lock 0");
-        require(
-            token.allowance(_msgSender(), address(this)) >= amount,
-            "Not enough allowance"
-        );
+        IERC20(nativeToken).transfer(receiver, amount);
 
-        token.burnFrom(msg.sender, amount);
-
-        emit BurnSuccess(_msgSender(), amount);
+        emit Release(sourceChain, nativeToken, amount, receiver);
     }
 
-    // source - the address of the source token which has wrapped version on the side chain
-    function mint(
-        address source,
-        address to,
-        uint256 amount
-    ) external override isSupported(source) {
-        // todo require validator to confirm the lock transaction on the main chain
-        // is successfuly mined/confirmed and the same amount is locked
-        require(amount > 0, "Can not mint 0");
+    function burn(
+        address wrappedToken,
+        uint256 amount,
+        address receiver
+    ) external override {
+        ERC20Burnable token = ERC20Burnable(wrappedToken);
+        require(amount > 0, "Bad amount");
 
-        ERC20PresetMinterPauser wrappedToken = ERC20PresetMinterPauser(
-            _sourceToWrapped[source]
+        token.burnFrom(receiver, amount);
+
+        emit Burn(wrappedToken, amount, receiver);
+    }
+
+    function mint(
+        uint16 nativeChain,
+        address nativeToken,
+        uint256 amount,
+        address receiver,
+        bytes memory txHash,
+        bytes memory txSigned
+    )
+        external
+        override
+        // Structs.WrappedTokenParams memory tokenParams
+        isTrustedSigner(txHash, txSigned)
+        isValidTx(nativeChain, nativeToken, amount, receiver, txHash)
+    {
+        require(amount > 0, "Bad amount");
+        require(_nativeToWrapped[nativeToken] != address(0), "Wrap first");
+
+        ERC20PresetMinterPauser(_nativeToWrapped[nativeToken]).mint(
+            receiver,
+            amount
         );
 
-        wrappedToken.mint(to, amount);
-
-        emit MintSuccess(to, amount);
+        emit Mint(_nativeToWrapped[nativeToken], amount, receiver);
     }
 
     function wrapToken(
-        string memory name,
-        string memory symbol,
-        address sourceAddress,
-        uint16 sourceChainId
-    ) external override {
-        // todo validate the sourceAddress is not a token on the same network
-        // todo ?maybe validate sourdeAddress exists on sourceChainId
-        // todo ?how to prevent non owner of source token to add wrapped token
-        require(
-            _sourceToWrapped[sourceAddress] == address(0),
-            "Wrapped token already added"
-        );
-        require(bytes(name).length != 0, "Name is required");
-        require(bytes(symbol).length != 0, "Symbol is required");
-        require(
-            keccak256(abi.encodePacked((name))) !=
-                keccak256(abi.encodePacked((symbol))),
-            "Can not be the same"
-        );
-        require(sourceChainId != 0, "Invalid source chain id");
+        uint16 nativeChain,
+        address nativeToken,
+        Structs.WrappedTokenParams memory newToken
+    ) external override returns (address) {
+        // todo validate the nativeToken is not a token on the same network
+        // todo ?maybe validate nativeToken exists on nativeChain
+        // todo ?should we prevent non owner of source token to add wrapped token
+        require(_nativeToWrapped[nativeToken] == address(0), "Already wrapped");
+        require(bytes(newToken.name).length != 0, "Bad name");
+        require(bytes(newToken.symbol).length != 0, "Bad symbol");
+        require(nativeChain != 0, "Bad chain id");
 
-        IERC20 token = new ERC20PresetMinterPauser(name, symbol);
-        _sourceToWrapped[sourceAddress] = address(token);
+        ERC20PresetMinterPauser wrappedToken = new ERC20PresetMinterPauser(
+            newToken.name,
+            newToken.symbol
+        );
+        _nativeToWrapped[nativeToken] = address(wrappedToken);
         _wrappedTokens.push(
-            SharedStructs.WrappedToken({
-                name: name,
-                symbol: symbol,
-                token: address(token),
-                sourceToken: sourceAddress,
-                sourceChainId: sourceChainId
+            Structs.WrappedToken({
+                name: newToken.name,
+                symbol: newToken.symbol,
+                decimals: wrappedToken.decimals(),
+                token: address(wrappedToken),
+                nativeToken: nativeToken,
+                nativeChain: nativeChain
             })
         );
 
-        emit WrapTokenSuccess(address(token));
-    }
+        emit WrappedTokenDeployed(
+            nativeChain,
+            nativeToken,
+            address(wrappedToken)
+        );
 
-    function wrappedTokens()
-        external
-        view
-        override
-        returns (SharedStructs.WrappedToken[] memory)
-    {
-        return _wrappedTokens;
-    }
-
-    function lockedBalance(address token)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _balances[_msgSender()][token];
+        return address(wrappedToken);
     }
 }

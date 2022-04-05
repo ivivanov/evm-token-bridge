@@ -10,9 +10,9 @@
     "clean": "hardhat clean",
     "compile": "hardhat compile",
     "prepare": "yarn clean && yarn compile",
-    "deploy:local": "yarn prepare && npx hardhat deploy --name Bridge --network localhost",
-    "deploy:rinkeby": "yarn prepare && npx hardhat deploy --name Bridge --network rinkeby",
-    "deploy:ropsten": "yarn prepare && npx hardhat deploy --name Bridge --network ropsten"
+    "deploy:local": "yarn prepare && npx hardhat deploy --network localhost",
+    "deploy:rinkeby": "yarn prepare && npx hardhat deploy --network rinkeby",
+    "deploy:ropsten": "yarn prepare && npx hardhat deploy --network ropsten"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
@@ -37,6 +37,7 @@
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.5.4",
     "hardhat": "^2.9.1",
+    "hardhat-contract-sizer": "^2.5.1",
     "hardhat-gas-reporter": "^1.0.4",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
