@@ -185,7 +185,8 @@ describe('Bridge', function name () {
     const txSigned = await ownerWallet.signMessage(txArr)
     await bridge.wrapToken(chainId, acmeToken.address, { name: 'wrapped Acme', symbol: 'wACM', decimals: 18 })
     await bridge.mint(chainId, nativeToken, amount, receiver, txHash, txSigned)
-    const wrappedToken = await bridge._wrappedTokens(0)
+    const allTokens = await bridge.wrappedTokens()
+    const wrappedToken = allTokens[0]
     const token = new ethers.Contract(wrappedToken.token, AcmeToken.abi, myWallet)
 
     // test
@@ -203,14 +204,15 @@ describe('Bridge', function name () {
     const txSigned = await ownerWallet.signMessage(txArr)
     await bridge.wrapToken(chainId, acmeToken.address, { name: 'wrapped Acme', symbol: 'wACM', decimals: 18 })
     await bridge.mint(chainId, nativeToken, amount, receiver, txHash, txSigned)
-    const wrappedToken = await bridge._wrappedTokens(0)
+    const allTokens = await bridge.wrappedTokens()
+    const wrappedToken = allTokens[0]
     const token = new ethers.Contract(wrappedToken.token, AcmeToken.abi, myWallet)
     await token.increaseAllowance(bridge.address, amount)
 
     // test
     await expect(bridge.burn(token.address, amount, receiver))
       .to.emit(bridge, 'Burn')
-      .withArgs(token.address, amount, myWallet.address)
+      .withArgs(token.address, amount, receiver)
   })
 
   it('Burn burns sent amount', async () => {
@@ -223,7 +225,8 @@ describe('Bridge', function name () {
     const txSigned = await ownerWallet.signMessage(txArr)
     await bridge.wrapToken(chainId, acmeToken.address, { name: 'wrapped Acme', symbol: 'wACM', decimals: 18 })
     await bridge.mint(chainId, nativeToken, amount, receiver, txHash, txSigned)
-    const wrappedToken = await bridge._wrappedTokens(0)
+    const allTokens = await bridge.wrappedTokens()
+    const wrappedToken = allTokens[0]
     const token = new ethers.Contract(wrappedToken.token, AcmeToken.abi, myWallet)
     await token.increaseAllowance(bridge.address, amount)
 
@@ -263,7 +266,7 @@ describe('Bridge', function name () {
       .to.emit(bridge, 'WrappedTokenDeployed')
   })
 
-  it('Wrapped tokens array should contain valid data', async () => {
+  it('WrappedTokens should contain valid data', async () => {
     const tokenParams = {
       name: 'wrapped Acme',
       symbol: 'wACM',
@@ -271,12 +274,29 @@ describe('Bridge', function name () {
     }
     const nativeToken = acmeToken.address
     await bridge.wrapToken(chainId, nativeToken, tokenParams)
-    const token = await bridge._wrappedTokens(0)
+    const allTokens = await bridge.wrappedTokens()
+    const token = allTokens[0]
 
+    expect(allTokens.length).to.equal(1)
     expect(token.name).to.equal(tokenParams.name)
     expect(token.symbol).to.equal(tokenParams.symbol)
     expect(token.nativeToken).to.equal(nativeToken)
     expect(token.nativeChain).to.equal(chainId)
+  })
+
+  it('NativeToWrappedToken should return wrapped token address', async () => {
+    const tokenParams = {
+      name: 'wrapped Acme',
+      symbol: 'wACM',
+      decimals: 18
+    }
+    const nativeToken = acmeToken.address
+    await bridge.wrapToken(chainId, nativeToken, tokenParams)
+    const allTokens = await bridge.wrappedTokens()
+    const wrappedToken = allTokens[0]
+    const wrappedTokenAddress = await bridge.nativeToWrappedToken(nativeToken)
+
+    expect(wrappedTokenAddress).to.equal(wrappedToken.token)
   })
 
   it('Sending ETH should reverts', async () => {

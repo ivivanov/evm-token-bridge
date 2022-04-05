@@ -8,8 +8,7 @@ import "./Structs.sol";
 import "./IBridge.sol";
 
 contract Bridge is IBridge {
-    Structs.WrappedToken[] public _wrappedTokens;
-
+    Structs.WrappedToken[] private _wrappedTokens;
     mapping(address => address) private _nativeToWrapped;
     address private _trustedSigner;
 
@@ -108,10 +107,10 @@ contract Bridge is IBridge {
         address receiver,
         bytes memory txHash,
         bytes memory txSigned
+        // Structs.WrappedTokenParams memory tokenParams
     )
         external
         override
-        // Structs.WrappedTokenParams memory tokenParams
         isTrustedSigner(txHash, txSigned)
         isValidTx(nativeChain, nativeToken, amount, receiver, txHash)
     {
@@ -162,5 +161,13 @@ contract Bridge is IBridge {
         );
 
         return address(wrappedToken);
+    }
+
+    function wrappedTokens() external override view returns(Structs.WrappedToken[] memory) {
+        return _wrappedTokens;
+    }
+
+    function nativeToWrappedToken(address nativeToken) external override view returns(address) {
+        return _nativeToWrapped[nativeToken];
     }
 }

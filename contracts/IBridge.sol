@@ -22,7 +22,7 @@ interface IBridge {
     );
 
     // An event emitted once a Burn transaction is executed
-    event Burn(address wrappedtoken, uint256 amount, address receiver);
+    event Burn(address wrappedToken, uint256 amount, address receiver);
 
     // An even emitted once a Mint transaction is executed
     event Mint(address wrappedToken, uint256 amount, address receiver);
@@ -70,9 +70,16 @@ interface IBridge {
         // Structs.WrappedTokenParams memory tokenParams
     ) external;
 
+    // The wrapToken functions is used to deploy new wrapped token
     function wrapToken(
         uint16 nativeChain,
         address nativeToken,
         Structs.WrappedTokenParams memory token
     ) external returns (address);
+
+    // The wrappedTokens return all the wrapped tokens
+    function wrappedTokens() external view returns(Structs.WrappedToken[] memory);
+
+    // The nativeToWrappedToken returns the coresponding wrapped token address
+    function nativeToWrappedToken(address nativeToken) external view returns(address);
 }
