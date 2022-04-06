@@ -90,4 +90,14 @@ library Utils {
             txHash := mload(add(bys, 32))
         }
     }
+
+    function isContract(address addr) public view returns (bool) {
+        uint256 size;
+
+        assembly {
+            size := extcodesize(addr)
+        }
+
+        return size > 0;
+    }
 }
