@@ -6,9 +6,9 @@ library Structs {
         string name;
         string symbol;
         uint8 decimals;
+        address wrappedToken;
         address token;
-        address nativeToken;
-        uint16 nativeChain;
+        uint16 sourceChain;
     }
 
     struct WrappedTokenParams {

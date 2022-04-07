@@ -44,11 +44,22 @@ task('deploy', 'Deploys Utils contract')
         Utils: utils
       }
     })
-    await deploy(Bridge, [process.env.TRUSTED_SIGNER], hre)
+    await deploy(Bridge, [process.env.TRUSTED_SIGNER, process.env.SERVICE_FEE], hre)
   })
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.4',
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.4',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      }]
+  },
   networks: {
     ropsten: {
       url: process.env.ROPSTEN_URL ?? '',
