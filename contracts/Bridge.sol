@@ -43,11 +43,19 @@ contract Bridge is IBridge {
         address token,
         uint256 amount,
         address receiver,
+        string memory wTokenName,
+        string memory wTokenSymbol,
         bytes memory txHash
     ) {
         require(
-            Utils.hashArgs(chainId, token, amount, receiver) ==
-                Utils.bytesToTxHash(txHash),
+            Utils.hashArgs(
+                chainId,
+                token,
+                amount,
+                receiver,
+                wTokenName,
+                wTokenSymbol
+            ) == Utils.bytesToTxHash(txHash),
             "Bad args"
         );
         _;
@@ -66,25 +74,26 @@ contract Bridge is IBridge {
         emit Lock(targetChain, address(token), msg.sender, amount, msg.value);
     }
 
-    function release(
-        uint16 sourceChain,
-        address token,
-        uint256 amount,
-        address receiver,
-        bytes memory txHash,
-        bytes memory txSigned
-    )
+    function release(Structs.ReleaseInput memory args)
         external
         override
-        isTrustedSigner(txHash, txSigned)
-        isValidTx(sourceChain, token, amount, receiver, txHash)
+        isTrustedSigner(args.txHash, args.txSigned)
+        isValidTx(
+            args.sourceChain,
+            args.token,
+            args.amount,
+            args.receiver,
+            "",
+            "",
+            args.txHash
+        )
     {
-        require(receiver == msg.sender, "Reciver and sender mismatch");
-        require(Utils.isContract(token), "Token does not exist");
+        require(args.receiver == msg.sender, "Receiver and sender mismatch");
+        require(Utils.isContract(args.token), "Token does not exist");
 
-        IERC20(token).transfer(msg.sender, amount);
+        IERC20(args.token).transfer(msg.sender, args.amount);
 
-        emit Release(sourceChain, token, amount, msg.sender);
+        emit Release(args.sourceChain, args.token, args.amount, msg.sender);
     }
 
     function burn(
@@ -93,7 +102,7 @@ contract Bridge is IBridge {
         uint256 amount,
         address receiver
     ) external override {
-        require(receiver == msg.sender, "Reciver and sender mismatch");
+        require(receiver == msg.sender, "Receiver and sender mismatch");
         ERC20Burnable token = ERC20Burnable(wrappedToken);
         require(amount > 0, "Bad amount");
         require(
@@ -110,54 +119,59 @@ contract Bridge is IBridge {
         emit Burn(wrappedToken, amount, receiver);
     }
 
-    function mint(
-        uint16 sourceChain,
-        address token,
-        uint256 amount,
-        address receiver,
-        bytes memory txHash,
-        bytes memory txSigned
-    )
+    function mint(Structs.MintInput memory args)
         external
         override
-        // Structs.WrappedTokenParams memory tokenParams
-        isTrustedSigner(txHash, txSigned)
-        isValidTx(sourceChain, token, amount, receiver, txHash)
+        isTrustedSigner(args.txHash, args.txSigned)
+        isValidTx(
+            args.sourceChain,
+            args.token,
+            args.amount,
+            args.receiver,
+            args.wrappedTokenName,
+            args.wrappedTokenSymbol,
+            args.txHash
+        )
     {
-        require(receiver == msg.sender, "Reciver and sender mismatch");
-        require(amount > 0, "Bad amount");
-        require(_tokenToWrapped[token] != address(0), "Wrap first");
+        require(args.receiver == msg.sender, "Receiver and sender mismatch");
+        require(args.amount > 0, "Bad amount");
 
-        ERC20PresetMinterPauser(_tokenToWrapped[token]).mint(
-            msg.sender,
-            amount
-        );
+        address wrappedToken = _tokenToWrapped[args.token];
+        if (wrappedToken == address(0)) {
+            // Wrap first
+            wrappedToken = wrapToken(
+                args.sourceChain,
+                args.token,
+                args.wrappedTokenName,
+                args.wrappedTokenSymbol
+            );
+        }
 
-        emit Mint(_tokenToWrapped[token], amount, msg.sender);
+        ERC20PresetMinterPauser(wrappedToken).mint(msg.sender, args.amount);
+
+        emit Mint(_tokenToWrapped[args.token], args.amount, msg.sender);
     }
 
     function wrapToken(
         uint16 sourceChain,
         address token,
-        Structs.WrappedTokenParams memory newToken
-    ) external override returns (address) {
-        // todo ?validate the token is not a token on the same network
-        // todo ?maybe validate token exists on sourceChain
-        // todo ?should we prevent non owner of source token to add wrapped token
+        string memory name,
+        string memory symbol
+    ) internal returns (address) {
         require(_tokenToWrapped[token] == address(0), "Already wrapped");
-        require(bytes(newToken.name).length != 0, "Bad name");
-        require(bytes(newToken.symbol).length != 0, "Bad symbol");
+        require(bytes(name).length != 0, "Bad name");
+        require(bytes(symbol).length != 0, "Bad symbol");
         require(sourceChain > 0, "Bad chain id");
 
         ERC20PresetMinterPauser wrappedToken = new ERC20PresetMinterPauser(
-            newToken.name,
-            newToken.symbol
+            name,
+            symbol
         );
 
         _tokenToWrapped[token] = address(wrappedToken);
         Structs.WrappedToken memory storeIt = Structs.WrappedToken({
-            name: newToken.name,
-            symbol: newToken.symbol,
+            name: name,
+            symbol: symbol,
             decimals: wrappedToken.decimals(),
             wrappedToken: address(wrappedToken),
             token: token,
@@ -179,14 +193,5 @@ contract Bridge is IBridge {
         returns (Structs.WrappedToken[] memory)
     {
         return _wrappedTokens;
-    }
-
-    function tokenToWrappedToken(address token)
-        external
-        view
-        override
-        returns (address)
-    {
-        return _tokenToWrapped[token];
     }
 }

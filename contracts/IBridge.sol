@@ -42,14 +42,7 @@ interface IBridge {
     ) external payable;
 
     // The release function is used for the unlock of tokens when they were sent from other network.
-    function release(
-        uint16 sourceChain,
-        address token,
-        uint256 amount,
-        address receiver,
-        bytes memory txHash,
-        bytes memory txSigned
-    ) external;
+    function release(Structs.ReleaseInput memory args) external;
 
     // The burn function is used for sending a wrapped token back into its source chain.
     function burn(
@@ -60,29 +53,11 @@ interface IBridge {
     ) external;
 
     // The mint function is used for the creation and release of wrapped tokens in a target chain.
-    function mint(
-        uint16 sourceChain,
-        address token,
-        uint256 amount,
-        address receiver,
-        bytes memory txHash,
-        bytes memory txSigned
-        // Structs.WrappedTokenParams memory tokenParams
-    ) external;
-
-    // The wrapToken functions is used to deploy new wrapped token
-    function wrapToken(
-        uint16 sourceChain,
-        address token,
-        Structs.WrappedTokenParams memory newToken
-    ) external returns (address);
+    function mint(Structs.MintInput memory mintArgs) external;
 
     // The wrappedTokens return all the wrapped tokens
     function wrappedTokens()
         external
         view
         returns (Structs.WrappedToken[] memory);
-
-    // The tokenToWrappedToken returns the coresponding wrapped token address
-    function tokenToWrappedToken(address token) external view returns (address);
 }

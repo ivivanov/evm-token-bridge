@@ -11,9 +11,23 @@ library Structs {
         uint16 sourceChain;
     }
 
-    struct WrappedTokenParams {
-        string name;
-        string symbol;
-        uint8 decimals;
+    struct MintInput {
+        uint16 sourceChain;
+        address token;
+        uint256 amount;
+        address receiver;
+        string wrappedTokenName;
+        string wrappedTokenSymbol;
+        bytes txHash;
+        bytes txSigned;
+    }
+
+    struct ReleaseInput {
+        uint16 sourceChain;
+        address token;
+        uint256 amount;
+        address receiver;
+        bytes txHash;
+        bytes txSigned;
     }
 }

@@ -3,19 +3,6 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 library Utils {
-    function recoverSigner(
-        bytes memory hashedMessage,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public pure returns (address) {
-        bytes32 messageDigest = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", hashedMessage)
-        );
-
-        return ecrecover(messageDigest, v, r, s);
-    }
-
     function recoverSignerFromSignedMessage(
         bytes memory hashedMessage,
         bytes memory signedMessage
@@ -30,6 +17,19 @@ library Utils {
         require(signer != address(0), "ECDSA: invalid signature");
 
         return signer;
+    }
+
+    function recoverSigner(
+        bytes memory hashedMessage,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public pure returns (address) {
+        bytes32 messageDigest = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", hashedMessage)
+        );
+
+        return ecrecover(messageDigest, v, r, s);
     }
 
     function splitSignature(bytes memory sig)
@@ -63,11 +63,20 @@ library Utils {
         uint16 sourceChain,
         address nativeToken,
         uint256 amount,
-        address receiver
+        address receiver,
+        string memory wTokenName,
+        string memory wTokenSymbol
     ) public pure returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked(sourceChain, nativeToken, amount, receiver)
+                abi.encodePacked(
+                    sourceChain,
+                    nativeToken,
+                    amount,
+                    receiver,
+                    wTokenName,
+                    wTokenSymbol
+                )
             );
     }
 
